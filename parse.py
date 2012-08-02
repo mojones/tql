@@ -100,5 +100,7 @@ print(parse_rec(tree_parser.parse_string('(Endopterygota:children)').find(TaxonL
 #What are the relationships between Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera and Strepsiptera?
 print(parse_rec(tree_parser.parse_string('(Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera, Strepsiptera)').find(TaxonList)))
 
+# are arthropods monophyletic?
+print(parse_rec(tree_parser.parse_string('((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
 
 
