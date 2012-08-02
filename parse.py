@@ -9,10 +9,12 @@ class TaxonExtension (Grammar):
 
 class TaxonFull (Grammar):
 	grammar = ( TaxonName, OPTIONAL(':', TaxonExtension) )
+	grammar_tags = ("list element",)
 
 
 class TaxonList (Grammar):
 	grammar = (  '(' , LIST_OF(OR(TaxonFull, REF('TaxonList')), sep=",") , ')'  )
+	grammar_tags = ("list element",)
 
 class Tree (Grammar):
 	grammar = (  TaxonList  )
@@ -20,10 +22,6 @@ class Tree (Grammar):
 
 tree_parser = Tree.parser()
 
-def list_subtrees(tree, level = 0):
-	for subtree in tree.find_all(TaxonList):
-		print('   ' * level + repr(subtree))
-		list_subtrees(subtree, level+1)
 
 
 def expand_taxon(taxon):
@@ -49,22 +47,32 @@ def expand_list(list):
 		result.extend(expand_taxon(taxon))
 	return result
 
-def get_taxon_list(input):
-	parsed = tree_parser.parse_string(input)
+def list_subtrees(tree, level = 0):
+	if tree == None:
+		return
+	for subtree in tree.find_tag_all("list element"):
+		print('   ' * level + repr(subtree))
+		list_subtrees(subtree, level+1)
 
-	result = []
-	for tax_list in parsed.find_all(TaxonList):
-		print(repr(tax_list))
-		result.extend(expand_list(tax_list))
 
-	return result
+def list_subtrees(tree, level = 0):
+	if tree == None:
+		return
+	for subtree in tree.find_tag_all("list element"):
+		print('   ' * level + repr(subtree))
+		list_subtrees(subtree, level+1)
 
-print(get_taxon_list('(nematoda)'))
-print(get_taxon_list('(nematoda, arthropoda, sea spiders)'))
-print(get_taxon_list('(Nematoda:children, arthropoda, sea spiders)'))
-print(get_taxon_list('(Coleoptera:parent, Nematoda, Eutheria)'))
-print(get_taxon_list('(Coleoptera:siblings)'))
 
-# test_tree = tree_parser.parse_string('(alpha, (beta, gamma))')
-# list_subtrees(test_tree)
+
+
+
+
+# print(get_taxon_list('(nematoda)'))
+# print(get_taxon_list('(nematoda, arthropoda, sea spiders)'))
+# print(get_taxon_list('(Nematoda:children, arthropoda, sea spiders)'))
+# print(get_taxon_list('(Coleoptera:parent, Nematoda, Eutheria)'))
+# print(get_taxon_list('(Coleoptera:siblings)'))
+
+test_tree = tree_parser.parse_string('(alpha, (beta, gamma), delta)')
+list_subtrees(test_tree)
 
