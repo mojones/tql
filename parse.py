@@ -1,21 +1,29 @@
 from modgrammar import *
 import tax
 
+# a taxon name is upper and lower case letters plus space
+# to allow for common names / binomials
 class TaxonName (Grammar):
 	grammar = (WORD("A-Za-z "))
 
+# there are three possible extensions to a taxon name
 class TaxonExtension (Grammar):
 	grammar = (L("children") | L("parent") | L("siblings"))
 
+# a full taxon name is a normal taxon name followed, optionally, 
+# by a colon then the extension
 class TaxonFull (Grammar):
 	grammar = ( TaxonName, OPTIONAL(':', TaxonExtension) )
 	grammar_tags = ("list element",)
 
-
+# a TaxonList starts and ends with brackets
+# inside the brackets is a list separated by commas
+# each element of the list is either a full taxon name or another list
 class TaxonList (Grammar):
 	grammar = (  '(' , LIST_OF(OR(TaxonFull, REF('TaxonList')), sep=",") , ')'  )
 	grammar_tags = ("list element",)
 
+# a tree contains a top-level taxon list
 class Tree (Grammar):
 	grammar = (  TaxonList  )
 
