@@ -21,5 +21,6 @@ def get_parent(taxon):
 	return taxid2name.get(taxon_parent_taxid, 'none')
 
 def get_siblings(taxon):
-	return get_children(get_parent(taxon))
+	return filter( lambda x : x != taxon, get_children(get_parent(taxon)))
+
 print(name2taxid.get('Nematoda'))
