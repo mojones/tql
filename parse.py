@@ -3,7 +3,7 @@ import tax
 
 # a taxon name is upper and lower case letters plus space
 # to allow for common names / binomials
-class TaxonName (Grammar):
+class Name (Grammar):
 	grammar = (WORD("A-Za-z "))
 
 # there are three possible extensions to a taxon name
@@ -13,7 +13,7 @@ class TaxonExtension (Grammar):
 # a full taxon name is a normal taxon name followed, optionally, 
 # by a colon then the extension
 class TaxonFull (Grammar):
-	grammar = ( TaxonName, OPTIONAL(':', TaxonExtension) )
+	grammar = ( Name, OPTIONAL(':', TaxonExtension) )
 	grammar_tags = ("list element",)
 
 # a TaxonList starts and ends with brackets
@@ -25,7 +25,7 @@ class TaxonList (Grammar):
 
 # a tree contains a top-level taxon list
 class Tree (Grammar):
-	grammar = (  TaxonList  )
+	grammar = ( Name, ':', TaxonList  )
 
 
 tree_parser = Tree.parser()
@@ -73,34 +73,34 @@ def parse_rec(tree, level = 0):
 # some tests to make sure we don't break anything
 
 # test flat lists of simple names
-assert (parse_rec(tree_parser.parse_string('(nematoda)').find(TaxonList))) == ['nematoda']
-assert (parse_rec(tree_parser.parse_string('(nematoda, arthropoda, sea spiders)').find(TaxonList))) == ['nematoda', 'arthropoda', 'sea spiders']
+assert (parse_rec(tree_parser.parse_string('my tree:(nematoda)').find(TaxonList))) == ['nematoda']
+assert (parse_rec(tree_parser.parse_string('my tree:(nematoda, arthropoda, sea spiders)').find(TaxonList))) == ['nematoda', 'arthropoda', 'sea spiders']
 
 # test children, sibling, parent extensions
-assert (parse_rec(tree_parser.parse_string('(Nematoda:children, arthropoda, sea spiders)').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', 'arthropoda', 'sea spiders']
-assert (parse_rec(tree_parser.parse_string('(Coleoptera:parent, Nematoda, Eutheria)').find(TaxonList))) == ['Endopterygota', 'Nematoda', 'Eutheria']
-assert (parse_rec(tree_parser.parse_string('(Coleoptera:siblings)').find(TaxonList))) == ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida']
+assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda:children, arthropoda, sea spiders)').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', 'arthropoda', 'sea spiders']
+assert (parse_rec(tree_parser.parse_string('my tree:(Coleoptera:parent, Nematoda, Eutheria)').find(TaxonList))) == ['Endopterygota', 'Nematoda', 'Eutheria']
+assert (parse_rec(tree_parser.parse_string('my tree:(Coleoptera:siblings)').find(TaxonList))) == ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida']
 
 # test structured trees with simple names
-assert (parse_rec(tree_parser.parse_string('(Nematoda, (Tardigrada, Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', 'Coleoptera']]
-assert (parse_rec(tree_parser.parse_string('(Nematoda, (Tardigrada, (Homo, Pan), Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', ['Homo', 'Pan'], 'Coleoptera']]
+assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Tardigrada, Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', 'Coleoptera']]
+assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Tardigrada, (Homo, Pan), Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', ['Homo', 'Pan'], 'Coleoptera']]
 
 # test structured trees with extensions
-assert (parse_rec(tree_parser.parse_string('(Nematoda:children, (Coleopter, Diptera))').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', ['Coleopter', 'Diptera']]
-assert (parse_rec(tree_parser.parse_string('(Nematoda, (Coleoptera:siblings, Diptera))').find(TaxonList))) == ['Nematoda', ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida', 'Diptera']]
+assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda:children, (Coleopter, Diptera))').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', ['Coleopter', 'Diptera']]
+assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Coleoptera:siblings, Diptera))').find(TaxonList))) == ['Nematoda', ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida', 'Diptera']]
 
 # some real queries
 
 # what is the sister taxon to coleoptera?
-print(parse_rec(tree_parser.parse_string('(Coleoptera, Coleoptera:siblings)').find(TaxonList)))
+print(parse_rec(tree_parser.parse_string('my tree:(Coleoptera, Coleoptera:siblings)').find(TaxonList)))
 
 #What are the relationships between members of Endopterygota?
-print(parse_rec(tree_parser.parse_string('(Endopterygota:children)').find(TaxonList)))
+print(parse_rec(tree_parser.parse_string('my tree:(Endopterygota:children)').find(TaxonList)))
 
 #What are the relationships between Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera and Strepsiptera?
-print(parse_rec(tree_parser.parse_string('(Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera, Strepsiptera)').find(TaxonList)))
+print(parse_rec(tree_parser.parse_string('my tree:(Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera, Strepsiptera)').find(TaxonList)))
 
 # are arthropods monophyletic?
-print(parse_rec(tree_parser.parse_string('((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
+print(parse_rec(tree_parser.parse_string('my tree:((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
 
 
