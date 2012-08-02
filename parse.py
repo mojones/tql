@@ -12,31 +12,50 @@ class TaxonFull (Grammar):
 
 
 class TaxonList (Grammar):
-	grammar = ('(' , LIST_OF(TaxonFull, sep=",") , ')' )
+	grammar = (  '(' , LIST_OF(OR(TaxonFull, REF('TaxonList')), sep=",") , ')'  )
+
+class Tree (Grammar):
+	grammar = (  TaxonList  )
 
 
+tree_parser = Tree.parser()
+
+def list_subtrees(tree, level = 0):
+	for subtree in tree.find_all(TaxonList):
+		print('   ' * level + repr(subtree))
+		list_subtrees(subtree, level+1)
+
+
+def expand_taxon(taxon):
+	print(repr(taxon))
+	taxon_name = taxon.elements[0].string
+	taxon_extension = taxon.elements[1]
+	# if the extension is none, then just add the name 
+	if taxon_extension == None:
+		return [taxon_name]
+	else:
+		print(taxon_extension)
+		# deal with children
+		if taxon_extension.string == ':children':
+			return (tax.get_children(taxon_name))
+		if taxon_extension.string == ':parent':
+			return [tax.get_parent(taxon_name)]
+		if taxon_extension.string == ':siblings':
+			return tax.get_siblings(taxon_name)
+
+def expand_list(list):
+	result = []
+	for taxon in list.find_all(TaxonFull):
+		result.extend(expand_taxon(taxon))
+	return result
 
 def get_taxon_list(input):
-	taxon_list_parser = TaxonList.parser()
-	taxon_list_result = taxon_list_parser.parse_string(input)
-	result = []
-	for taxon in taxon_list_result.find_all(TaxonFull):
-		taxon_name = taxon.elements[0].string
-		taxon_extension = taxon.elements[1]
-		print(repr(taxon))
-		# if the extension is none, then just add the name 
-		if taxon_extension == None:
-			result.append(taxon_name)
-		else:
-			print(taxon_extension)
-			# deal with children
-			if taxon_extension.string == ':children':
-				result.extend(tax.get_children(taxon_name))
-			if taxon_extension.string == ':parent':
-				result.append(tax.get_parent(taxon_name))
-			if taxon_extension.string == ':siblings':
-				result.extend(tax.get_siblings(taxon_name))
+	parsed = tree_parser.parse_string(input)
 
+	result = []
+	for tax_list in parsed.find_all(TaxonList):
+		print(repr(tax_list))
+		result.extend(expand_list(tax_list))
 
 	return result
 
@@ -45,4 +64,7 @@ print(get_taxon_list('(nematoda, arthropoda, sea spiders)'))
 print(get_taxon_list('(Nematoda:children, arthropoda, sea spiders)'))
 print(get_taxon_list('(Coleoptera:parent, Nematoda, Eutheria)'))
 print(get_taxon_list('(Coleoptera:siblings)'))
+
+# test_tree = tree_parser.parse_string('(alpha, (beta, gamma))')
+# list_subtrees(test_tree)
 
