@@ -7,13 +7,16 @@ class Name (Grammar):
 	grammar = (WORD("A-Za-z "))
 
 # there are three possible extensions to a taxon name
-class TaxonExtension (Grammar):
+class TaxonSuffix (Grammar):
 	grammar = (L("children") | L("parent") | L("siblings"))
+
+class TaxonPrefix (Grammar):
+	grammar = (L("sister"))
 
 # a full taxon name is a normal taxon name followed, optionally, 
 # by a colon then the extension
 class TaxonFull (Grammar):
-	grammar = ( Name, OPTIONAL(':', TaxonExtension) )
+	grammar = ( OPTIONAL(TaxonPrefix, '?'), Name, OPTIONAL(':', TaxonSuffix) )
 	grammar_tags = ("list element",)
 
 # a TaxonList starts and ends with brackets
@@ -34,19 +37,19 @@ tree_parser = Tree.parser()
 
 def expand_taxon(taxon):
 	# print(repr(taxon))
-	taxon_name = taxon.elements[0].string
-	taxon_extension = taxon.elements[1]
+	taxon_name = taxon.find(Name).string
+	taxon_extension = taxon.find(TaxonSuffix)
 	# if the extension is none, then just add the name 
 	if taxon_extension == None:
 		return [taxon_name]
 	else:
 		# print(taxon_extension)
 		# deal with children
-		if taxon_extension.string == ':children':
+		if taxon_extension.string == 'children':
 			return tax.get_children(taxon_name)
-		if taxon_extension.string == ':parent':
+		if taxon_extension.string == 'parent':
 			return [tax.get_parent(taxon_name)]
-		if taxon_extension.string == ':siblings':
+		if taxon_extension.string == 'siblings':
 			return tax.get_siblings(taxon_name)
 
 
