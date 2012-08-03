@@ -10,8 +10,15 @@ class Name (Grammar):
 class TaxonSuffix (Grammar):
 	grammar = (L("children") | L("parent") | L("siblings"))
 
+class TaxonSuffixQuantifier (Grammar):
+	grammar = (  '{' , WORD("0123456789"), '}' )
+
+
+# not used
 class TaxonPrefix (Grammar):
 	grammar = (L("sister"))
+
+
 
 class Exclude (Grammar):
 	grammar = ( L('-') )
@@ -19,7 +26,7 @@ class Exclude (Grammar):
 # a full taxon name is a normal taxon name followed, optionally, 
 # by a colon then the extension
 class TaxonFull (Grammar):
-	grammar = ( OPTIONAL(Exclude), Name, OPTIONAL(':', TaxonSuffix) )
+	grammar = ( OPTIONAL(Exclude), Name, OPTIONAL(':', TaxonSuffix, OPTIONAL(TaxonSuffixQuantifier)) )
 	grammar_tags = ("list element",)
 
 # a TaxonList starts and ends with brackets
@@ -37,7 +44,6 @@ class TreeList (Grammar):
 	grammar = (  ONE_OR_MORE(Tree, sep=";")  )
 
 
-tree_list_parser = TreeList.parser()
 
 
 
@@ -83,7 +89,7 @@ def parse_rec(tree, level = 0):
 	return result
 
 def parse_trees(input):
-
+	tree_list_parser = TreeList.parser()
 	parsed = tree_list_parser.parse_string(input)
 
 	print(repr(parsed))
@@ -130,5 +136,6 @@ def parse_trees(input):
 # print(parse_rec(tree_parser.parse_string('my tree:((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
 
 parse_trees('my tree:(Coleoptera, Coleoptera:siblings, -Diptera);')
+parse_trees('my tree:(Nematoda, (Mandibulata:children{2}, -Myriapoda, Chelicerata:children));')
 
 
