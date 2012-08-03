@@ -1,6 +1,17 @@
 from modgrammar import *
 import tax
 
+
+def iter_flatten(iterable):
+  it = iter(iterable)
+  for e in it:
+    if isinstance(e, (list, tuple)):
+      for f in iter_flatten(e):
+        yield f
+    else:
+      yield e
+
+
 # a taxon name is upper and lower case letters plus space
 # to allow for common names / binomials
 class Name (Grammar):
@@ -97,7 +108,8 @@ def parse_rec(tree, level = 0):
 		if isinstance(subtree, TaxonList):
 			result.append(parse_rec(subtree))
 	for taxon in to_remove:
-		result.remove(taxon)
+		if taxon in result:
+			result.remove(taxon)
 	return result
 
 def parse_trees(input_trees):
@@ -106,45 +118,15 @@ def parse_trees(input_trees):
 		tree_parser = Tree.parser()
 		parsed_tree = tree_parser.parse_string(tree)
 		tree_name = parsed_tree.find(Name).string
-		list = parse_rec(parsed_tree.find(TaxonList))
-		parsed_trees[tree_name] = list
+		tree_as_list = parse_rec(parsed_tree.find(TaxonList))
+		parsed_trees[tree_name] = tree_as_list
 
 	for name, tree in parsed_trees.items():
 		print('##  ' + name + '  ##')
 		print(tree)
+		if len(set(iter_flatten(tree))) < len(list(iter_flatten(tree))):
+			print('warning: some taxa occur multiple times in the tree')
 
-# some tests to make sure we don't break anything
-
-# test flat lists of simple names
-# assert (parse_rec(tree_parser.parse_string('my tree:(nematoda)').find(TaxonList))) == ['nematoda']
-# assert (parse_rec(tree_parser.parse_string('my tree:(nematoda, arthropoda, sea spiders)').find(TaxonList))) == ['nematoda', 'arthropoda', 'sea spiders']
-
-# # test children, sibling, parent extensions
-# assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda:children, arthropoda, sea spiders)').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', 'arthropoda', 'sea spiders']
-# assert (parse_rec(tree_parser.parse_string('my tree:(Coleoptera:parent, Nematoda, Eutheria)').find(TaxonList))) == ['Endopterygota', 'Nematoda', 'Eutheria']
-# assert (parse_rec(tree_parser.parse_string('my tree:(Coleoptera:siblings)').find(TaxonList))) == ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida']
-
-# # test structured trees with simple names
-# assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Tardigrada, Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', 'Coleoptera']]
-# assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Tardigrada, (Homo, Pan), Coleoptera))').find(TaxonList))) == ['Nematoda', ['Tardigrada', ['Homo', 'Pan'], 'Coleoptera']]
-
-# # test structured trees with extensions
-# assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda:children, (Coleopter, Diptera))').find(TaxonList))) == ['unclassified Nematoda', 'Enoplea', 'Chromadorea', 'Nematoda environmental samples', ['Coleopter', 'Diptera']]
-# assert (parse_rec(tree_parser.parse_string('my tree:(Nematoda, (Coleoptera:siblings, Diptera))').find(TaxonList))) == ['Nematoda', ['Diptera', 'Hymenoptera', 'Siphonaptera', 'Mecoptera', 'Strepsiptera', 'Amphiesmenoptera', 'Neuropterida', 'Diptera']]
-
-# some real queries
-
-# what is the sister taxon to coleoptera?
-#print(parse_rec(tree_parser.parse_string('my tree:(Coleoptera, Coleoptera:siblings)').find(TaxonList)))
-
-#What are the relationships between members of Endopterygota?
-# print(parse_rec(tree_parser.parse_string('my tree:(Endopterygota:children)').find(TaxonList)))
-
-#What are the relationships between Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera and Strepsiptera?
-# print(parse_rec(tree_parser.parse_string('my tree:(Amphiesmenoptera, Coleoptera, Diptera, Hymenoptera, Mecoptera, Neuropterida, Siphonaptera, Strepsiptera)').find(TaxonList)))
-
-# are arthropods monophyletic?
-# print(parse_rec(tree_parser.parse_string('my tree:((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
 
 
 # playing with negation and multi-childrening
@@ -157,16 +139,17 @@ def parse_trees(input_trees):
 # parse_trees('my tree:((Coleoptera, Diptera), Coleoptera:siblings, -Diptera);')
 
 # compare two hypotheses; coleoptera+diptera vs coleoptera + hymenoptera
-parse_trees([
-	'hypa:((Coleoptera, Diptera), Coleoptera:siblings, -Diptera)',
-	'hypb:((Coleoptera, Hymenoptera), Coleoptera:siblings, -Hymenoptera)'
-	])
+# parse_trees([
+# 	'hypa:((Coleoptera, Diptera), Coleoptera:siblings, -Diptera)',
+# 	'hypb:((Coleoptera, Hymenoptera), Coleoptera:siblings, -Hymenoptera)'
+# 	])
 
 
 
 # parse_trees('my tree:(Mandibulata:children{1});')
 # parse_trees('my tree:(Pancrustacea:children{1});')
 # parse_trees('my tree:(Mandibulata:children{2});')
-# parse_trees('my tree:(Mandibulata:children{2}, -Pancrustacea:children);')
+parse_trees(['my tree:((Mandibulata:children{2}), Crustacea)'])
+# parse_trees(['my tree:(Mandibulata:children{2}, -Mandibulata:children{2})'])
 
 
