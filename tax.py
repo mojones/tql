@@ -31,8 +31,25 @@ def get_parent(taxon):
 	taxon_parent_taxid = taxid2parent.get(taxon_taxid, 'none')
 	return taxid2name.get(taxon_parent_taxid, 'none')
 
+def get_parent_multiple(taxon, count):
+	current_taxon = taxon
+	while count > 0:
+		current_taxon = get_parent(current_taxon)
+		count += -1
+	return current_taxon
+
 def get_siblings(taxon):
 	return filter( lambda x : x != taxon, get_children(get_parent(taxon)))
 
+def get_siblings_multiple(taxon, count):
+	parent = get_parent_multiple(taxon, count)
+	return get_children_multiple(parent, count)
+
 # print(get_children_multiple('Arthropoda', 1))
 # print(get_children_multiple('Arthropoda', 2))
+
+# print(get_parent_multiple('Arthropoda', 1))
+# print(get_parent_multiple('Arthropoda', 2))
+
+print(get_siblings_multiple('Coleoptera', 1))
+print(get_siblings_multiple('Coleoptera', 2))

@@ -83,9 +83,9 @@ def expand_taxon(taxon):
 		if suffix.string == 'children':
 			return tax.get_children_multiple(taxon_name, suffix_quantifier)
 		if suffix.string == 'parent':
-			return [tax.get_parent(taxon_name)]
+			return [tax.get_parent_multiple(taxon_name, suffix_quantifier)]
 		if suffix.string == 'siblings':
-			return tax.get_siblings(taxon_name)
+			return tax.get_siblings_multiple(taxon_name, suffix_quantifier)
 
 
 def list_subtrees(tree, level = 0):
@@ -149,7 +149,13 @@ def parse_trees(input_trees):
 # parse_trees('my tree:(Mandibulata:children{1});')
 # parse_trees('my tree:(Pancrustacea:children{1});')
 # parse_trees('my tree:(Mandibulata:children{2});')
-parse_trees(['my tree:((Mandibulata:children{2}), Crustacea)'])
+
+
+
+# parse_trees(['my tree:((Mandibulata:children{2}), Crustacea)'])
 # parse_trees(['my tree:(Mandibulata:children{2}, -Mandibulata:children{2})'])
+# parse_trees(['my tree:(Mandibulata:parent{1}, Mandibulata:parent{2}, Mandibulata:parent{3})'])
 
 
+
+# TODO last common ancestors e.g. Diptera^Coleoptera
