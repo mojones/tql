@@ -11,7 +11,7 @@ class TaxonSuffix (Grammar):
 	grammar = (L("children") | L("parent") | L("siblings"))
 
 class TaxonSuffixQuantifier (Grammar):
-	grammar = (  '{' , WORD("0123456789"), '}' )
+	grammar = (  WORD("0123456789")  )
 
 
 # not used
@@ -26,7 +26,7 @@ class Exclude (Grammar):
 # a full taxon name is a normal taxon name followed, optionally, 
 # by a colon then the extension
 class TaxonFull (Grammar):
-	grammar = ( OPTIONAL(Exclude), Name, OPTIONAL(':', TaxonSuffix, OPTIONAL(TaxonSuffixQuantifier)) )
+	grammar = ( OPTIONAL(Exclude), Name, OPTIONAL(':', TaxonSuffix, OPTIONAL('{', TaxonSuffixQuantifier, '}')) )
 	grammar_tags = ("list element",)
 
 # a TaxonList starts and ends with brackets
@@ -41,7 +41,7 @@ class Tree (Grammar):
 	grammar = ( Name, ':', TaxonList  )
 
 class TreeList (Grammar):
-	grammar = (  ONE_OR_MORE(Tree, sep=";")  )
+	grammar = (  LIST_OF(Tree, sep=";")  )
 
 
 
@@ -50,18 +50,30 @@ class TreeList (Grammar):
 def expand_taxon(taxon):
 	# print(repr(taxon))
 	taxon_name = taxon.find(Name).string
-	taxon_extension = taxon.find(TaxonSuffix)
+	suffix = taxon.find(TaxonSuffix)
+
+
 	# if the extension is none, then just add the name 
-	if taxon_extension == None:
+	if suffix == None:
 		return [taxon_name]
+	
+	# otherwise do something interesting
 	else:
-		# print(taxon_extension)
-		# deal with children
-		if taxon_extension.string == 'children':
-			return tax.get_children(taxon_name)
-		if taxon_extension.string == 'parent':
+
+		# grab the suffix quantifier, if there is one, and turn it into an int
+		suffix_quantifier = taxon.find(TaxonSuffixQuantifier)
+		if suffix_quantifier == None:
+			suffix_quantifier = 1
+		else:
+			suffix_quantifier = int(suffix_quantifier.string)
+
+		# print(suffix)
+		# deal with suffixes
+		if suffix.string == 'children':
+			return tax.get_children_multiple(taxon_name, suffix_quantifier)
+		if suffix.string == 'parent':
 			return [tax.get_parent(taxon_name)]
-		if taxon_extension.string == 'siblings':
+		if suffix.string == 'siblings':
 			return tax.get_siblings(taxon_name)
 
 
@@ -88,19 +100,18 @@ def parse_rec(tree, level = 0):
 		result.remove(taxon)
 	return result
 
-def parse_trees(input):
-	tree_list_parser = TreeList.parser()
-	parsed = tree_list_parser.parse_string(input)
-
-	print(repr(parsed))
+def parse_trees(input_trees):
 	parsed_trees = {}
-	for tree in parsed.elements:
-		print(repr(tree))
-		tree_name = tree.find(Name)
-		list = parse_rec(tree.find(TaxonList))
+	for tree in input_trees:
+		tree_parser = Tree.parser()
+		parsed_tree = tree_parser.parse_string(tree)
+		tree_name = parsed_tree.find(Name).string
+		list = parse_rec(parsed_tree.find(TaxonList))
 		parsed_trees[tree_name] = list
 
-	print(parsed_trees)
+	for name, tree in parsed_trees.items():
+		print('##  ' + name + '  ##')
+		print(tree)
 
 # some tests to make sure we don't break anything
 
@@ -135,7 +146,27 @@ def parse_trees(input):
 # are arthropods monophyletic?
 # print(parse_rec(tree_parser.parse_string('my tree:((Arthropoda:children), Arthropoda:siblings)').find(TaxonList)))
 
-parse_trees('my tree:(Coleoptera, Coleoptera:siblings, -Diptera);')
-parse_trees('my tree:(Nematoda, (Mandibulata:children{2}, -Myriapoda, Chelicerata:children));')
+
+# playing with negation and multi-childrening
+
+# Coleoptera and all siblings
+# parse_trees('my tree:(Coleoptera, Coleoptera:siblings);')
+# Coleoptera and all siblings excluding diptera
+# parse_trees('my tree:(Coleoptera, Coleoptera:siblings, -Diptera);')
+# Coleoptera is closer to Diptera than to any other sibling
+# parse_trees('my tree:((Coleoptera, Diptera), Coleoptera:siblings, -Diptera);')
+
+# compare two hypotheses; coleoptera+diptera vs coleoptera + hymenoptera
+parse_trees([
+	'hypa:((Coleoptera, Diptera), Coleoptera:siblings, -Diptera)',
+	'hypb:((Coleoptera, Hymenoptera), Coleoptera:siblings, -Hymenoptera)'
+	])
+
+
+
+# parse_trees('my tree:(Mandibulata:children{1});')
+# parse_trees('my tree:(Pancrustacea:children{1});')
+# parse_trees('my tree:(Mandibulata:children{2});')
+# parse_trees('my tree:(Mandibulata:children{2}, -Pancrustacea:children);')
 
 

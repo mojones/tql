@@ -15,6 +15,17 @@ def get_children(taxon):
 	children = parent2child.get(taxon_taxid, [])
 	return [taxid2name[x] for x in children]
 
+def get_children_multiple(taxon, count):
+	current_list = [taxon]
+	while count > 0:
+		new_list = []
+		for current_taxon in current_list:
+			new_list.extend(get_children(current_taxon))
+		current_list = new_list
+		count += -1
+	return new_list
+
+
 def get_parent(taxon):
 	taxon_taxid = name2taxid.get(taxon, 'none')
 	taxon_parent_taxid = taxid2parent.get(taxon_taxid, 'none')
@@ -23,4 +34,5 @@ def get_parent(taxon):
 def get_siblings(taxon):
 	return filter( lambda x : x != taxon, get_children(get_parent(taxon)))
 
-print(name2taxid.get('Nematoda'))
+# print(get_children_multiple('Arthropoda', 1))
+# print(get_children_multiple('Arthropoda', 2))
