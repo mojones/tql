@@ -19,7 +19,9 @@ class Name (Grammar):
 
 # there are three possible extensions to a taxon name
 class TaxonSuffix (Grammar):
-	grammar = (L("children") | L("parent") | L("siblings"))
+	grammar = (L("children") | L("parent") | L("siblings") | L("species") | L("genus") | L("order") |  L("family")| L("class") | L("phylum") ) 
+
+
 
 class TaxonSuffixQuantifier (Grammar):
 	grammar = (  WORD("0123456789")  )
@@ -82,10 +84,13 @@ def expand_taxon(taxon):
 		# deal with suffixes
 		if suffix.string == 'children':
 			return tax.get_children_multiple(taxon_name, suffix_quantifier)
-		if suffix.string == 'parent':
+		elif suffix.string == 'parent':
 			return [tax.get_parent_multiple(taxon_name, suffix_quantifier)]
-		if suffix.string == 'siblings':
+		elif suffix.string == 'siblings':
 			return tax.get_siblings_multiple(taxon_name, suffix_quantifier)
+		else:
+			print(taxon_name, suffix.string)
+			return tax.get_named_children(taxon_name, suffix.string)
 
 
 def list_subtrees(tree, level = 0):
@@ -155,6 +160,11 @@ def parse_trees(input_trees):
 # parse_trees(['my tree:((Mandibulata:children{2}), Crustacea)'])
 # parse_trees(['my tree:(Mandibulata:children{2}, -Mandibulata:children{2})'])
 # parse_trees(['my tree:(Mandibulata:parent{1}, Mandibulata:parent{2}, Mandibulata:parent{3})'])
+
+#parse_trees(['my tree:(Mandibulata:siblings{2})'])
+
+parse_trees(['my tree:(Arthropoda:class)'])
+
 
 
 

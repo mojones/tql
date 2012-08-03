@@ -45,11 +45,34 @@ def get_siblings_multiple(taxon, count):
 	parent = get_parent_multiple(taxon, count)
 	return get_children_multiple(parent, count)
 
+# recursive function to get all the children of a given taxid
+def get_children(taxid):
+    result = []
+    # for all children of this taxid...
+    for child in parent2child[taxid]:
+        # first add the child itself
+        result.append(child)
+        # then if the child has children...
+        if child in parent2child:
+            # add the children of the child
+            # note that we use extend() here rather than append()
+            # extend() is the equivalent of concatenating two lists
+            # if we use append() here then we get a set of nested list which is not what we want!
+            result.extend(get_children(child))
+    return result
+
+def get_named_children(taxon, rank):
+	print('getting all ' + rank)
+	all_children = get_children(name2taxid[taxon])
+	return list([taxid2name[child] for child in all_children if taxid2rank[child] == rank])
+
 # print(get_children_multiple('Arthropoda', 1))
 # print(get_children_multiple('Arthropoda', 2))
 
 # print(get_parent_multiple('Arthropoda', 1))
 # print(get_parent_multiple('Arthropoda', 2))
 
-print(get_siblings_multiple('Coleoptera', 1))
-print(get_siblings_multiple('Coleoptera', 2))
+# print(get_siblings_multiple('Coleoptera', 1))
+# print(get_siblings_multiple('Coleoptera', 2))
+
+#print(get_named_children('Arthropoda', 'class'))
