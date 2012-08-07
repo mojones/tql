@@ -118,6 +118,7 @@ def parse_rec(tree, level = 0):
 	return result
 
 def parse_trees(input_trees):
+	print('about to parse ' , input_trees)
 	parsed_trees = {}
 	for tree in input_trees:
 		tree_parser = Tree.parser()
@@ -126,12 +127,7 @@ def parse_trees(input_trees):
 		tree_as_list = parse_rec(parsed_tree.find(TaxonList))
 		parsed_trees[tree_name] = tree_as_list
 
-	for name, tree in parsed_trees.items():
-		print('##  ' + name + '  ##')
-		print(tree)
-		if len(set(iter_flatten(tree))) < len(list(iter_flatten(tree))):
-			print('warning: some taxa occur multiple times in the tree')
-
+	return parsed_trees	
 
 
 # playing with negation and multi-childrening
@@ -163,7 +159,7 @@ def parse_trees(input_trees):
 
 #parse_trees(['my tree:(Mandibulata:siblings{2})'])
 
-parse_trees(['my tree:(Arthropoda:class)'])
+#parse_trees(['my tree:(Arthropoda:class)'])
 
 
 
