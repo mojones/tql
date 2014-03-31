@@ -67,4 +67,35 @@ def get_named_children(taxon, rank):
 	all_children = get_children_recursive(name2taxid[taxon])
 	return list([taxid2name[child] for child in all_children if taxid2rank[child] == rank])
 
+def get_all_parents(species):
+    result = []
+    current_taxid = species
+    found = False
+    while current_taxid != 1:
+        result.append(current_taxid)
+        parent_taxid = taxid2parent[current_taxid]
+        current_taxid = parent_taxid
+    result.append(1)
+    return result
+
+
+def find_lca(species1, species2):
+    species1_parents = get_all_parents(species1)
+    species2_parents = get_all_parents(species2)
+    for parent in species1_parents:
+        if parent in species2_parents:
+            return parent
+
+
+def find_lca_multiple(list_of_species):
+    # the lca of a single species is itself
+    # so we will set the lca to be the first species
+    current_lca = name2taxid[list_of_species[0]]
+    # now go through the list of species
+    for species in list_of_species:
+        #set the new lca to the the lca of the current species and the old lca
+        current_lca = find_lca(name2taxid[species], current_lca)
+    return taxid2name[current_lca]
 # print(get_children_multiple('Arthropoda', 1))
+
+# print(find_lca_multiple(['Coleoptera', 'Diptera', 'Nematoda']))
